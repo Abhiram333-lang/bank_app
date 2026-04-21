@@ -1,0 +1,344 @@
+// const User = require("../models/User");
+// const bcrypt = require("bcryptjs"); 
+// const jwt = require("jsonwebtoken")
+
+// //REGISTER USER
+// const registerUser = async (req,res) => {
+//     try{
+//         const{name,
+//             username,
+//             email, 
+//             password,
+//             address,
+//             phone,
+//             age,
+//             dob,
+//             pan,
+//             aadhar,
+//         } = req.body;
+
+//         if(!name || !username || !email || !password){
+//             return res.status(400).json({message:"Required fields missing"});
+//         }
+
+//         const userExists = await User.findOne({
+//             $or:[ {email} , {username} ]
+//         });
+
+//         if(userExists){
+//             return res.status(400).json({message:"User already exists"});
+//         }
+
+//         const profilePicUrl = req.file ? req.file.path : "";
+//         console.log("Cloudinary URL:", profilePicUrl);
+
+//         const hashedPassword = await bcrypt.hash(password,10);
+
+//         const newUser = await User.create({
+//             name,
+//             username,
+//             email,
+//             password : hashedPassword,
+//             address,
+//             phone,
+//             age,
+//             dob,
+//             aadhar,
+//             pan,
+//             profilePic : profilePicUrl,
+//             accountNumber: Math.floor(100000000000 + Math.random() * 900000000000),
+//         });
+
+//         res.status(201).json({message:"User registered successfully",user:newUser});
+//     }catch(error){
+//         res.status(500).json({message:error.message});
+//     }
+// };
+
+
+// //LOGIN USER
+// const loginUser = async (req,res) => {
+//     try{
+//         const {identifier , password} = req.body;
+
+//         if(!identifier || !password){
+//             return res.status(400).json({message:"All fields required"});
+//         }
+
+//         //if user Exists
+//         const user = await User.findOne({
+//             $or:[
+//                 {email:identifier},
+//                 {username:identifier}
+//             ]
+//         });
+
+//         if(!user){
+//             return res.status(400).json({message: "User not found"});
+//         }
+
+//         //comapare pass
+//         const isMatch = bcrypt.compareSync(password,user.password);
+
+//         if(!isMatch){
+//             return res.status(400).json({message:"Invalid credentials"});
+//         }
+
+//         //generate token
+//         const token = jwt.sign(
+//             { id: user._id , role:user.role},
+//             process.env.JWT_SECRET,
+//             {expiresIn:"1d"}
+//         );
+
+//         res.json({
+//             message: "Login successful",
+//             token,
+//             user: {
+//                 id : user._id,
+//                 name : user.name,
+//                 email : user.email,
+//                 role : user.role,
+//                 balance : user.balance,
+//                 profilePic:user.profilePic,
+//                 accountNumber : user.accountNumber,
+//                 bankName: "Horizon Bank",
+//                 branch: "Calicut",
+//                 ifsc: "HOR456723C6",
+//             },
+//         });
+
+//     } catch(error){
+//         res.status(500).json({message:error.message})
+//     }
+// };
+
+// //PROFILE
+// const getProfile = async (req,res) => {
+//     try{
+//         const user = await User.findById(req.user.id).select("-password");
+//         console.log("Profile pic URL:", user.profilePic); // Debug log
+//         res.json(user);
+//     }catch(error){
+//         res.status(500).json({message: "Server Error"})
+//     }
+// };
+
+// //UpdateProfile
+// const updateProfile = async (req,res) => {
+//     try{
+//         console.log("req.user._id:", req.user._id);
+//         console.log("req.file:", req.file ? {
+//             path: req.file.path,
+//             filename: req.file.filename,
+//             size: req.file.size
+//         } : "No file uploaded");
+
+//         const user = await User.findById(req.user._id);
+
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         user.name = req.body.name || user.name;
+//         user.username = req.body.username || user.username;
+//         user.email = req.body.email || user.email;
+//         user.dob = req.body.dob || user.dob;
+//         user.phone = req.body.phone || user.phone;
+//         user.address = req.body.address || user.address;
+//         user.age = req.body.age || user.age;
+//         user.aadhar = req.body.aadhar || user.aadhar;
+//         user.pan = req.body.pan || user.pan;
+
+//         if (req.file) {
+//             user.profilePic = req.file.path; 
+//             console.log("Updated profilePic to Cloudinary URL:", user.profilePic);
+//         }
+
+//         await user.save();
+
+//         const updatedUser = await User.findById(user._id).select("-password");
+
+//         console.log("Updated user profilePic:", updatedUser.profilePic);
+
+//         res.json(updatedUser)
+
+//     }catch (error) {
+//   res.status(500).json({ message: error.message });
+// }
+// }
+
+// module.exports = {registerUser , loginUser , getProfile , updateProfile};
+
+
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+// REGISTER USER
+const registerUser = async (req, res) => {
+  try {
+    const {
+      name,
+      username,
+      email,
+      password,
+      address,
+      phone,
+      age,
+      dob,
+      pan,
+      aadhar,
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ message: "Required fields missing: name, username, email and password are required" });
+    }
+
+    // Check for existing user
+    const userExists = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (userExists) {
+      if (userExists.email === email) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      return res.status(400).json({ message: "Username already taken" });
+    }
+
+    const profilePicUrl = req.file ? req.file.path : "";
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      name,
+      username,
+      email,
+      password: hashedPassword,
+      address,
+      phone,
+      age,
+      dob,
+      aadhar,
+      pan,
+      profilePic: profilePicUrl,
+      accountNumber: Math.floor(100000000000 + Math.random() * 900000000000),
+    });
+
+    res.status(201).json({ message: "User registered successfully", user: newUser });
+
+  } catch (error) {
+    // Handle mongoose duplicate key error
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// LOGIN USER
+const loginUser = async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const isMatch = bcrypt.compareSync(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        balance: user.balance,
+        profilePic: user.profilePic,
+        accountNumber: user.accountNumber,
+        bankName: "Horizon Bank",
+        branch: "Calicut",
+        ifsc: "HOR456723C6",
+      },
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET PROFILE
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// UPDATE PROFILE
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.name     = req.body.name     || user.name;
+    user.username = req.body.username || user.username;
+    user.email    = req.body.email    || user.email;
+    user.dob      = req.body.dob      || user.dob;
+    user.phone    = req.body.phone    || user.phone;
+    user.address  = req.body.address  || user.address;
+    user.age      = req.body.age      || user.age;
+    user.aadhar   = req.body.aadhar   || user.aadhar;
+    user.pan      = req.body.pan      || user.pan;
+
+    if (req.file) {
+      user.profilePic = req.file.path;
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select("-password");
+    res.json(updatedUser);
+
+  } catch (error) {
+    // Handle mongoose duplicate key error on update
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getProfile, updateProfile };
