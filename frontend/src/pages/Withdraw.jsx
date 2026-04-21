@@ -1,3 +1,154 @@
+// import React, { useState } from "react";
+// import axios from "axios";
+// import toast from "react-hot-toast";
+
+// const API = import.meta.env.VITE_API_URL;
+
+// const Withdraw = () => {
+//   const [amount, setAmount] = useState("");
+//   const [transactionType, setTransactionType] = useState("withdraw");
+//   const [receiverAccount, setReceiverAccount] = useState("");
+
+//   const user = JSON.parse(localStorage.getItem("currentUser"));
+
+//   async function onSubmit() {
+
+//     if (!amount || amount <= 0) {
+//       toast.error("Please enter a valid amount");
+//       return;
+//     }
+
+//     try{
+//       const token = localStorage.getItem("token");
+
+//       let response;
+
+//       if(transactionType === "withdraw"){
+
+//         response = await axios.post(`${API}/api/transactions/withdraw`,{
+//           amount: Number(amount)
+//         },{
+//           headers:{ Authorization:`Bearer ${token}`}
+//         });
+
+//       }else{
+
+//         response = await axios.post(`${API}/api/transactions/transfer`,{
+//           amount: Number(amount),
+//           accountNumber:receiverAccount
+//         },{
+//           headers: { Authorization: `Bearer ${token}`}
+//         });
+//       }
+
+//       const updatedUser = {
+//         ...user,
+//         balance: response.data.balance,
+//       };
+
+//       localStorage.setItem("currentUser",JSON.stringify(updatedUser));
+
+//       if(transactionType === "withdraw"){
+//         toast.success("Money withdraw sucessfully")
+//       }else{
+//       toast.success("Money transferred successfully");
+//       }
+//       setAmount("");
+//       setReceiverAccount("");
+
+//     }catch(error){
+//       toast.error(error.response?.data?.message || " Transaction failed")
+//     }
+//   }
+//   return(
+//     <div>
+    
+//       <div className="relative min-h-screen w-full ">
+//         <img
+//           src="/images/bank.png"
+//           alt="img"
+//           className="w-full h-screen object-cover"
+//         />
+//       </div>
+//       <div className="absolute inset-0 top-0 w-full h-screen bg-gray-700/70"></div>
+
+//       <div className="w-full md:w-1/2 absolute inset-0 flex justify-center items-center px-4 sm:px-8">
+//         <div className="bg-emerald-400 rounded-2xl w-full sm:w-[420px] md:w-[520px] lg:w-[650px]">
+//           <div className="px-6 sm:px-10 md:px-16 py-8">
+//             <h4 className="text-2xl font-serif font-semibold mb-4 text-center">
+//               Transaction
+//             </h4>
+
+//             {/* Transaction Type */}
+//             <div className="mb-6">
+//               <label className="mr-4 font-semibold">
+//                 <input
+//                   type="radio"
+//                   value="withdraw"
+//                   checked={transactionType === "withdraw"}
+//                   onChange={() => setTransactionType("withdraw")}
+//                 />{" "}
+//                 Withdraw
+//               </label>
+
+//               <label className="font-semibold">
+//                 <input
+//                   type="radio"
+//                   value="transfer"
+//                   checked={transactionType === "transfer"}
+//                   onChange={() => setTransactionType("transfer")}
+//                 />{" "}
+//                 Transfer
+//               </label>
+//             </div>
+
+//             <h3 className="font-semibold">Account No :</h3>
+//             <p className="opacity-75">{user.accountNumber}</p>
+
+
+//             {transactionType === "transfer" && (
+//               <>
+//                 <h3 className="font-semibold mt-4">
+//                   Receiver Account No
+//                 </h3>
+//                 <input
+//                   type="text"
+//                   value={receiverAccount}
+//                   onChange={(e) =>
+//                     setReceiverAccount(e.target.value)
+//                   }
+//                   placeholder="Enter Receiver Account No"
+//                   className="bg-transparent outline-none p-2 placeholder-gray-700/75"
+//                 />
+//               </>
+//             )}
+
+//             <h3 className="font-semibold mt-4">Amount</h3>
+//             <input
+//               type="number"
+//               value={amount}
+//               onChange={(e) => setAmount(e.target.value)}
+//               placeholder="Enter Amount"
+//               className="bg-transparent outline-none p-2 placeholder-gray-700/75"
+//             />
+//           </div>
+
+//           <div
+//             onClick={onSubmit}
+//             className="bg-white/55 px-4 py-2 m-6 rounded-lg font-semibold text-center hover:bg-gray-500 active:scale-95 cursor-pointer transition-transform"
+//           >
+//             <button>
+//               {transactionType === "withdraw"
+//                 ? "Withdraw"
+//                 : "Transfer"}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+// export default Withdraw;
 import React, { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -8,62 +159,71 @@ const Withdraw = () => {
   const [amount, setAmount] = useState("");
   const [transactionType, setTransactionType] = useState("withdraw");
   const [receiverAccount, setReceiverAccount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState({ text: "", success: null });
 
   const user = JSON.parse(localStorage.getItem("currentUser"));
 
   async function onSubmit() {
+    setStatusMsg({ text: "", success: null });
 
     if (!amount || amount <= 0) {
+      setStatusMsg({ text: "Please enter a valid amount", success: false });
       toast.error("Please enter a valid amount");
       return;
     }
 
-    try{
-      const token = localStorage.getItem("token");
+    if (transactionType === "transfer" && !receiverAccount) {
+      setStatusMsg({ text: "Please enter receiver account number", success: false });
+      toast.error("Please enter receiver account number");
+      return;
+    }
 
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
       let response;
 
-      if(transactionType === "withdraw"){
-
-        response = await axios.post(`${API}/api/transactions/withdraw`,{
-          amount: Number(amount)
-        },{
-          headers:{ Authorization:`Bearer ${token}`}
-        });
-
-      }else{
-
-        response = await axios.post(`${API}/api/transactions/transfer`,{
-          amount: Number(amount),
-          accountNumber:receiverAccount
-        },{
-          headers: { Authorization: `Bearer ${token}`}
-        });
+      if (transactionType === "withdraw") {
+        response = await axios.post(
+          `${API}/api/transactions/withdraw`,
+          { amount: Number(amount) },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        response = await axios.post(
+          `${API}/api/transactions/transfer`,
+          { amount: Number(amount), accountNumber: receiverAccount },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
 
-      const updatedUser = {
-        ...user,
-        balance: response.data.balance,
-      };
+      const updatedUser = { ...user, balance: response.data.balance };
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
 
-      localStorage.setItem("currentUser",JSON.stringify(updatedUser));
+      const successText =
+        transactionType === "withdraw"
+          ? "Money withdrawn successfully!"
+          : "Money transferred successfully!";
 
-      if(transactionType === "withdraw"){
-        toast.success("Money withdraw sucessfully")
-      }else{
-      toast.success("Money transferred successfully");
-      }
+      setStatusMsg({ text: successText, success: true });
+      toast.success(successText);
       setAmount("");
       setReceiverAccount("");
 
-    }catch(error){
-      toast.error(error.response?.data?.message || " Transaction failed")
+    } catch (error) {
+      const errText = error.response?.data?.message || "Transaction failed. Please try again.";
+      setStatusMsg({ text: errText, success: false });
+      toast.error(errText);
+    } finally {
+      setLoading(false);
     }
   }
-  return(
+
+  return (
     <div>
-    
-      <div className="relative min-h-screen w-full ">
+      <div className="relative min-h-screen w-full">
         <img
           src="/images/bank.png"
           alt="img"
@@ -86,17 +246,22 @@ const Withdraw = () => {
                   type="radio"
                   value="withdraw"
                   checked={transactionType === "withdraw"}
-                  onChange={() => setTransactionType("withdraw")}
+                  onChange={() => {
+                    setTransactionType("withdraw");
+                    setStatusMsg({ text: "", success: null });
+                  }}
                 />{" "}
                 Withdraw
               </label>
-
               <label className="font-semibold">
                 <input
                   type="radio"
                   value="transfer"
                   checked={transactionType === "transfer"}
-                  onChange={() => setTransactionType("transfer")}
+                  onChange={() => {
+                    setTransactionType("transfer");
+                    setStatusMsg({ text: "", success: null });
+                  }}
                 />{" "}
                 Transfer
               </label>
@@ -105,18 +270,16 @@ const Withdraw = () => {
             <h3 className="font-semibold">Account No :</h3>
             <p className="opacity-75">{user.accountNumber}</p>
 
-
             {transactionType === "transfer" && (
               <>
-                <h3 className="font-semibold mt-4">
-                  Receiver Account No
-                </h3>
+                <h3 className="font-semibold mt-4">Receiver Account No</h3>
                 <input
                   type="text"
                   value={receiverAccount}
-                  onChange={(e) =>
-                    setReceiverAccount(e.target.value)
-                  }
+                  onChange={(e) => {
+                    setReceiverAccount(e.target.value);
+                    setStatusMsg({ text: "", success: null });
+                  }}
                   placeholder="Enter Receiver Account No"
                   className="bg-transparent outline-none p-2 placeholder-gray-700/75"
                 />
@@ -127,18 +290,38 @@ const Withdraw = () => {
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setStatusMsg({ text: "", success: null });
+              }}
               placeholder="Enter Amount"
               className="bg-transparent outline-none p-2 placeholder-gray-700/75"
             />
+
+            {/* Status Message */}
+            {statusMsg.text && (
+              <p
+                className={`mt-4 text-sm font-semibold text-center ${
+                  statusMsg.success ? "text-green-800" : "text-red-700"
+                }`}
+              >
+                {statusMsg.success ? "✅" : "❌"} {statusMsg.text}
+              </p>
+            )}
           </div>
 
           <div
-            onClick={onSubmit}
-            className="bg-white/55 px-4 py-2 m-6 rounded-lg font-semibold text-center hover:bg-gray-500 active:scale-95 cursor-pointer transition-transform"
+            onClick={!loading ? onSubmit : undefined}
+            className={`bg-white/55 px-4 py-2 m-6 rounded-lg font-semibold text-center transition-transform
+              ${loading
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-500 active:scale-95 cursor-pointer"
+              }`}
           >
-            <button>
-              {transactionType === "withdraw"
+            <button disabled={loading}>
+              {loading
+                ? "Processing..."
+                : transactionType === "withdraw"
                 ? "Withdraw"
                 : "Transfer"}
             </button>
@@ -147,5 +330,6 @@ const Withdraw = () => {
       </div>
     </div>
   );
-}
+};
+
 export default Withdraw;
