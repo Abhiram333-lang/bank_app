@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
 
 
         accountNumber: {
-            type: String,
+            type: Number,
             unique: true,
         },
 

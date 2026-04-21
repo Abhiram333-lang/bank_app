@@ -19,7 +19,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://banking-management-system-nine.vercel.app'
+    // 'https://banking-management-system-nine.vercel.app'
   ],
   credentials: true
 }));
