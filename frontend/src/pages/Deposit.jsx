@@ -59,18 +59,18 @@ export default function Deposit() {
               Deposit
             </h4>
             <h2 className="font-semibold mb-3">Account Number</h2>
-            <h2 className=" mb-5">XXXX XXXX XXXX</h2>
+            {/* <h2 className=" mb-5">XXXX XXXX XXXX</h2> */}
             <p className="tracking-widest text-base sm:text-lg font-mono my-4 opacity-75 text-left">
               {user.accountNumber}
             </p>
 
             <h2 className="font-semibold mb-3">Branch </h2>
-            <h2 className=" mb-3">BranchName</h2>
-            <p className="tracking-widest text-base sm:text-lg font-mono my-4  opacity-75 text-left">
+            <h2 className=" mb-3">Horizon Bank</h2>
+            {/* <p className="tracking-widest text-base sm:text-lg font-mono my-4  opacity-75 text-left">
               {user.branch}
-            </p>
+            </p> */}
             <h2 className="font-semibold mb-3">Amount</h2>
-            <h2 className=" mb-3">$10000</h2>
+            {/* <h2 className=" mb-3">$10000</h2> */}
             <input 
             type="number"
             value={amount}
